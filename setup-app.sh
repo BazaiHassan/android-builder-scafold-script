@@ -138,12 +138,184 @@ ask          "Project directory name" "$(echo "$APP_NAME" | tr ' ' '_' | tr '[:u
 ask          "Output parent directory" "$HOME/Projects" OUTPUT_PARENT
 ask          "Minimum SDK version" "26" MIN_SDK
 ask          "Compile / Target SDK version" "$LATEST_PLATFORM" COMPILE_SDK
-ask          "Kotlin version" "2.0.21" KOTLIN_VERSION
-ask          "Compose BOM version" "2024.12.01" COMPOSE_BOM_VERSION
-ask          "AGP (Android Gradle Plugin) version" "8.7.3" AGP_VERSION
-ask          "Gradle wrapper version (used only if no binary supplied)" "8.11.1" GRADLE_WRAPPER_VERSION
+ask          "Kotlin version" "2.1.21" KOTLIN_VERSION
+ask          "Compose BOM version" "2025.05.00" COMPOSE_BOM_VERSION
+ask          "AGP (Android Gradle Plugin) version" "8.9.2" AGP_VERSION
+ask          "Gradle wrapper version (used only if no binary supplied)" "8.13" GRADLE_WRAPPER_VERSION
 ask          "App version name" "1.0.0" VERSION_NAME
 ask          "App version code" "1" VERSION_CODE
+
+# ── Compatibility table ───────────────────────────────────────────────────────
+echo ""
+header "Compatibility Check"
+
+# ── Version number helpers ────────────────────────────────────────────────────
+# Convert "X.Y.Z" → integer XXYYZZ  (e.g. 2.1.21 → 20121, 8.13.0 → 81300)
+ver_num() {
+    local maj min pat
+    maj=$(echo "$1" | cut -d. -f1)
+    min=$(echo "$1" | cut -d. -f2)
+    pat=$(echo "$1" | cut -d. -f3)
+    pat=${pat:-0}
+    echo $(( maj * 10000 + min * 100 + pat ))
+}
+
+AGP_NUM=$(ver_num "$AGP_VERSION")
+KT_NUM=$(ver_num "$KOTLIN_VERSION")
+
+# Gradle binary version (if supplied)
+if [[ -n "$GRADLE_BIN" ]]; then
+    GRADLE_USED_VER=$("$GRADLE_BIN" --version 2>/dev/null | awk '/^Gradle / {print $2}')
+else
+    GRADLE_USED_VER="$GRADLE_WRAPPER_VERSION"
+fi
+GRADLE_NUM=$(ver_num "${GRADLE_USED_VER:-0}")
+
+# Java major already in JAVA_MAJOR from check_java()
+
+# ── Check each pair and store result/note ─────────────────────────────────────
+# Each row: check_name | left_val | right_val | status | note
+# status: OK | WARN | FAIL
+
+ROWS=()
+
+# ── 1. Java ↔ AGP ────────────────────────────────────────────────────────────
+# AGP 8.x requires JDK 17+
+row_java_agp_status="OK"
+row_java_agp_note="JDK ${JAVA_VER} satisfies AGP ${AGP_VERSION}"
+if [[ -n "${JAVA_MAJOR:-}" && "$JAVA_MAJOR" -lt 17 ]]; then
+    row_java_agp_status="FAIL"
+    row_java_agp_note="AGP 8.x requires JDK 17+. Found JDK $JAVA_VER"
+fi
+ROWS+=("Java ↔ AGP|JDK $JAVA_VER|AGP $AGP_VERSION|$row_java_agp_status|$row_java_agp_note")
+
+# ── 2. Java ↔ Gradle ─────────────────────────────────────────────────────────
+# Gradle 8.x requires JDK 8+ to run; JDK 17 is recommended
+row_java_gradle_status="OK"
+row_java_gradle_note="JDK ${JAVA_VER} runs Gradle ${GRADLE_USED_VER}"
+if [[ -n "${JAVA_MAJOR:-}" && "$JAVA_MAJOR" -lt 8 ]]; then
+    row_java_gradle_status="FAIL"
+    row_java_gradle_note="Gradle requires at least JDK 8. Found JDK $JAVA_VER"
+elif [[ -n "${JAVA_MAJOR:-}" && "$JAVA_MAJOR" -lt 17 ]]; then
+    row_java_gradle_status="WARN"
+    row_java_gradle_note="JDK 17+ recommended for Gradle 8.x (found $JAVA_VER)"
+fi
+ROWS+=("Java ↔ Gradle|JDK $JAVA_VER|Gradle $GRADLE_USED_VER|$row_java_gradle_status|$row_java_gradle_note")
+
+# ── 3. AGP ↔ Gradle ──────────────────────────────────────────────────────────
+# AGP 8.x requires Gradle 8.0+; AGP 8.9+ works best with Gradle 8.11+
+row_agp_gradle_status="OK"
+row_agp_gradle_note="AGP ${AGP_VERSION} and Gradle ${GRADLE_USED_VER} are compatible"
+if [[ $GRADLE_NUM -lt 80000 ]]; then
+    row_agp_gradle_status="FAIL"
+    row_agp_gradle_note="AGP $AGP_VERSION requires Gradle 8.0+. Found $GRADLE_USED_VER"
+elif [[ $AGP_NUM -ge 80900 && $GRADLE_NUM -lt 81100 ]]; then
+    row_agp_gradle_status="WARN"
+    row_agp_gradle_note="AGP $AGP_VERSION works best with Gradle 8.11+. Found $GRADLE_USED_VER"
+fi
+ROWS+=("AGP ↔ Gradle|AGP $AGP_VERSION|Gradle $GRADLE_USED_VER|$row_agp_gradle_status|$row_agp_gradle_note")
+
+# ── 4. AGP ↔ Kotlin ──────────────────────────────────────────────────────────
+row_agp_kotlin_status="OK"
+row_agp_kotlin_note="AGP ${AGP_VERSION} and Kotlin ${KOTLIN_VERSION} are compatible"
+if [[ $AGP_NUM -ge 81000 && $KT_NUM -lt 20100 ]]; then
+    row_agp_kotlin_status="FAIL"
+    row_agp_kotlin_note="AGP $AGP_VERSION requires Kotlin 2.1+. Found $KOTLIN_VERSION"
+elif [[ $AGP_NUM -ge 81300 && $KT_NUM -lt 20300 ]]; then
+    row_agp_kotlin_status="WARN"
+    row_agp_kotlin_note="AGP $AGP_VERSION supports Kotlin 2.3+. Found $KOTLIN_VERSION (works, can upgrade)"
+fi
+ROWS+=("AGP ↔ Kotlin|AGP $AGP_VERSION|Kotlin $KOTLIN_VERSION|$row_agp_kotlin_status|$row_agp_kotlin_note")
+
+# ── 5. Kotlin ↔ Gradle ───────────────────────────────────────────────────────
+row_kt_gradle_status="OK"
+row_kt_gradle_note="Kotlin ${KOTLIN_VERSION} and Gradle ${GRADLE_USED_VER} are compatible"
+if [[ $KT_NUM -ge 20000 && $GRADLE_NUM -lt 76000 ]]; then
+    row_kt_gradle_status="FAIL"
+    row_kt_gradle_note="Kotlin 2.x requires Gradle 7.6.3+. Found $GRADLE_USED_VER"
+elif [[ $KT_NUM -ge 20300 && $GRADLE_NUM -lt 80700 ]]; then
+    row_kt_gradle_status="WARN"
+    row_kt_gradle_note="Kotlin $KOTLIN_VERSION works best with Gradle 8.7+. Found $GRADLE_USED_VER"
+fi
+ROWS+=("Kotlin ↔ Gradle|Kotlin $KOTLIN_VERSION|Gradle $GRADLE_USED_VER|$row_kt_gradle_status|$row_kt_gradle_note")
+
+# ── 6. compileSdk ↔ AGP ──────────────────────────────────────────────────────
+row_sdk_agp_status="OK"
+row_sdk_agp_note="compileSdk $COMPILE_SDK is supported by AGP $AGP_VERSION"
+if [[ $COMPILE_SDK -lt 34 && $AGP_NUM -ge 81000 ]]; then
+    row_sdk_agp_status="WARN"
+    row_sdk_agp_note="AGP $AGP_VERSION recommends compileSdk 34+. Found $COMPILE_SDK"
+fi
+ROWS+=("compileSdk ↔ AGP|compileSdk $COMPILE_SDK|AGP $AGP_VERSION|$row_sdk_agp_status|$row_sdk_agp_note")
+
+# ── 7. minSdk ↔ compileSdk ───────────────────────────────────────────────────
+row_minsdk_status="OK"
+row_minsdk_note="minSdk $MIN_SDK ≤ compileSdk $COMPILE_SDK"
+if [[ $MIN_SDK -gt $COMPILE_SDK ]]; then
+    row_minsdk_status="FAIL"
+    row_minsdk_note="minSdk ($MIN_SDK) cannot be greater than compileSdk ($COMPILE_SDK)"
+fi
+ROWS+=("minSdk ↔ compileSdk|minSdk $MIN_SDK|compileSdk $COMPILE_SDK|$row_minsdk_status|$row_minsdk_note")
+
+# ── Render the table ──────────────────────────────────────────────────────────
+COL1=22   # Check
+COL2=18   # Left value
+COL3=18   # Right value
+COL4=7    # Status
+COL5=46   # Note
+
+pad() { printf "%-${1}s" "$2"; }   # left-pad a string to width $1
+
+DIVIDER=$(printf '─%.0s' $(seq 1 $(( COL1 + COL2 + COL3 + COL4 + COL5 + 14 )) ))
+
+status_col() {
+    case "$1" in
+        OK)   echo -e "${GREEN}  ✔ OK ${RESET}" ;;
+        WARN) echo -e "${YELLOW} ⚠ WARN${RESET}" ;;
+        FAIL) echo -e "${RED}  ✖ FAIL${RESET}" ;;
+        *)    echo "  ?     " ;;
+    esac
+}
+
+echo ""
+echo -e "  ${BOLD}┌${DIVIDER}┐${RESET}"
+printf "  ${BOLD}│ %-${COL1}s │ %-${COL2}s │ %-${COL3}s │ %-${COL4}s │ %-${COL5}s │${RESET}\n" \
+    "Check" "Your Value A" "Your Value B" "Status" "Note"
+echo -e "  ${BOLD}├${DIVIDER}┤${RESET}"
+
+HAS_FAIL=false
+HAS_WARN=false
+
+for row in "${ROWS[@]}"; do
+    IFS='|' read -r c1 c2 c3 c4 c5 <<< "$row"
+    # Truncate note if too long
+    if [[ ${#c5} -gt $COL5 ]]; then c5="${c5:0:$(( COL5 - 1 ))}…"; fi
+    # Pick colour for the row background hint via status icon
+    case "$c4" in
+        OK)   SICON="${GREEN}✔ OK  ${RESET}" ;;
+        WARN) SICON="${YELLOW}⚠ WARN${RESET}"; HAS_WARN=true ;;
+        FAIL) SICON="${RED}✖ FAIL${RESET}"; HAS_FAIL=true ;;
+        *)    SICON="?     " ;;
+    esac
+    printf "  │ $(pad $COL1 "$c1") │ $(pad $COL2 "$c2") │ $(pad $COL3 "$c3") │ %b │ $(pad $COL5 "$c5") │\n" \
+        "$SICON"
+done
+
+echo -e "  ${BOLD}└${DIVIDER}┘${RESET}"
+echo ""
+
+# ── Abort on FAIL, continue on WARN ──────────────────────────────────────────
+if $HAS_FAIL; then
+    die "One or more compatibility checks FAILED. Fix the issues above before continuing."
+fi
+if $HAS_WARN; then
+    warn "Some checks show warnings. You can continue but consider reviewing them."
+    echo -en "Continue anyway? [y/N]: "
+    read -r WARN_CONFIRM
+    [[ "${WARN_CONFIRM,,}" != "y" ]] && die "Aborted by user."
+else
+    success "All compatibility checks passed."
+fi
 
 # Derive package path
 PACKAGE_PATH="${PACKAGE_NAME//.//}"
@@ -154,6 +326,17 @@ PROJECT_ROOT="$OUTPUT_PARENT/$PROJECT_DIR_NAME"
 
 echo ""
 info "Project will be created at: ${BOLD}$PROJECT_ROOT${RESET}"
+echo ""
+echo -e "  ${BOLD}Summary:${RESET}"
+echo -e "  App Name     : $APP_NAME"
+echo -e "  Package      : $PACKAGE_NAME"
+echo -e "  Path         : $PROJECT_ROOT"
+echo -e "  SDK          : minSdk=$MIN_SDK  compileSdk=$COMPILE_SDK"
+echo -e "  Kotlin       : $KOTLIN_VERSION"
+echo -e "  Compose BOM  : $COMPOSE_BOM_VERSION"
+echo -e "  AGP          : $AGP_VERSION"
+echo -e "  Gradle       : ${GRADLE_BIN:-wrapper v$GRADLE_WRAPPER_VERSION}"
+echo ""
 echo -en "Continue? [Y/n]: "
 read -r CONFIRM
 [[ "${CONFIRM,,}" == "n" ]] && die "Aborted by user."
@@ -234,8 +417,8 @@ pluginManagement {
     repositories {
         google {
             content {
-                includeGroupByRegex("com\\.android.*")
-                includeGroupByRegex("com\\.google.*")
+                includeGroupByRegex("com\\\\.android.*")
+                includeGroupByRegex("com\\\\.google.*")
                 includeGroupByRegex("androidx.*")
             }
         }
