@@ -138,12 +138,29 @@ ask          "Project directory name" "$(echo "$APP_NAME" | tr ' ' '_' | tr '[:u
 ask          "Output parent directory" "$HOME/Projects" OUTPUT_PARENT
 ask          "Minimum SDK version" "26" MIN_SDK
 ask          "Compile / Target SDK version" "$LATEST_PLATFORM" COMPILE_SDK
-ask          "Kotlin version" "2.1.21" KOTLIN_VERSION
+ask          "Kotlin version (e.g. 2.1.21)" "2.1.21" KOTLIN_VERSION
 ask          "Compose BOM version" "2025.05.00" COMPOSE_BOM_VERSION
-ask          "AGP (Android Gradle Plugin) version" "8.9.2" AGP_VERSION
-ask          "Gradle wrapper version (used only if no binary supplied)" "8.13" GRADLE_WRAPPER_VERSION
-ask          "App version name" "1.0.0" VERSION_NAME
-ask          "App version code" "1" VERSION_CODE
+
+echo ""
+info "AGP = Android Gradle Plugin. This is DIFFERENT from your Gradle build tool version."
+info "AGP always has 3 parts (X.Y.Z). e.g. 8.10.0, 8.9.2 — NOT 8.13 (that is a Gradle version)."
+info "Latest stable AGP releases: 8.10.0 (compileSdk 36, Gradle 8.13)"
+ask  "AGP (Android Gradle Plugin) version (e.g. 8.10.0)" "8.10.0" AGP_VERSION
+
+# Validate AGP is exactly X.Y.Z (three numeric parts)
+if ! echo "$AGP_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+    die "AGP version must be in X.Y.Z format (e.g. 8.10.0). You entered: '$AGP_VERSION'
+       Tip: '$GRADLE_USED_VER' is your Gradle build tool version, not an AGP version."
+fi
+
+# Validate Kotlin is exactly X.Y.Z
+if ! echo "$KOTLIN_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+    die "Kotlin version must be in X.Y.Z format (e.g. 2.1.21). You entered: '$KOTLIN_VERSION'"
+fi
+
+ask  "Gradle wrapper version (used only if no binary supplied)" "8.13" GRADLE_WRAPPER_VERSION
+ask  "App version name" "1.0.0" VERSION_NAME
+ask  "App version code" "1" VERSION_CODE
 
 # ── Compatibility table ───────────────────────────────────────────────────────
 echo ""
