@@ -1,4 +1,4 @@
-# create_android_project.sh
+# setup-app.sh
 
 A Bash script that scaffolds a production-ready Android project from scratch — no Android Studio required. Designed for **Fedora Linux**, using **Kotlin**, **Jetpack Compose**, and a **Gradle Version Catalog** (TOML).
 
@@ -24,8 +24,8 @@ The script checks all of the above automatically and will error or warn accordin
 ## Usage
 
 ```bash
-chmod +x create_android_project.sh
-./create_android_project.sh
+chmod +x setup-app.sh
+./setup-app.sh
 ```
 
 The script is fully interactive — it will prompt you for everything it needs.
