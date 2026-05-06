@@ -629,6 +629,77 @@ mkdir -p "$PROJECT_ROOT/app/src/test/kotlin/$PACKAGE_PATH"
 
 success "Directory tree created."
 
+# ── Adaptive Icon XML (ic_launcher) ───────────────────────────────────────────
+cat > "$PROJECT_ROOT/app/src/main/res/drawable/ic_launcher.xml" <<XML
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>
+XML
+
+cat > "$PROJECT_ROOT/app/src/main/res/drawable/ic_launcher_round.xml" <<XML
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>
+
+XML
+# ── Icon Foreground (simple dumbbell/fitness icon) ────────────────────────────
+cat > "$PROJECT_ROOT/app/src/main/res/drawable/ic_launcher_foreground.xml" <<XML
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+  <group android:scaleX="0.6"
+      android:scaleY="0.6"
+      android:translateX="21.6"
+      android:translateY="21.6">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,27.5C54,27.5 45,36 45,45C45,54 54,62.5 54,62.5C54,62.5 63,54 63,45C63,36 54,27.5 54,27.5Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M27.5,40.5L22,35L27.5,29.5L33,35L27.5,40.5Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80.5,40.5L86,35L80.5,29.5L75,35L80.5,40.5Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M22,62.5L27.5,57L33,62.5L27.5,68L22,62.5Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M86,62.5L80.5,57L75,62.5L80.5,68L86,62.5Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M35,76L45,66L47,72L37,82L35,76Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M73,76L63,66L61,72L71,82L73,76Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M49,78L54,73L59,78L54,83L49,78Z" />
+  </group>
+</vector>
+XML
+
+# ── Icon Background Color ──────────────────────────────────────────────────────
+cat > "$PROJECT_ROOT/app/src/main/res/values/colors.xml" <<XML
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="ic_launcher_background">#FF6600</color>
+</resources>
+XML
+
 # =============================================================================
 # STEP 8 – libs.versions.toml  (FIXED: full KeepFit deps + KAPT, no KSP)
 # =============================================================================
@@ -1280,6 +1351,278 @@ if [[ "${BUILD_NOW,,}" == "y" ]]; then
 fi
 
 # =============================================================================
+# STEP 14 – Project Summary (for LLM/developer reference)
+# =============================================================================
+header "Project Summary (File Tree + Structure)"
+
+SUMMARY_FILE="$PROJECT_ROOT/PROJECT_SUMMARY.md"
+
+cat > "$SUMMARY_FILE" <<MD
+# ${APP_NAME} - Android Project Summary
+
+## 📁 File Tree
+
+\`\`\`
+${PROJECT_DIR_NAME}/
+├── build.gradle.kts
+├── settings.gradle.kts
+├── gradle.properties
+├── local.properties
+├── .gitignore
+├── gradlew
+├── gradle/
+│   ├── libs.versions.toml
+│   └── wrapper/
+│       └── gradle-wrapper.properties
+├── app/
+│   ├── build.gradle.kts
+│   ├── proguard-rules.pro
+│   └── src/
+│       ├── main/
+│       │   ├── AndroidManifest.xml
+│       │   ├── java/ (Kotlin source)
+│       │   │   └── ${PACKAGE_PATH//\//\/}
+│       │   │       ├── MyApp.kt
+│       │   │       ├── di/
+│       │   │       ├── core/
+│       │   │       │   ├── navigation/
+│       │   │       │   ├── ui/theme/
+│       │   │       │   └── utils/
+│       │   │       ├── data/
+│       │   │       │   ├── local/
+│       │   │       │   │   ├── dao/
+│       │   │       │   │   └── entity/
+│       │   │       │   ├── repository/
+│       │   │       │   └── seed/
+│       │   │       ├── domain/
+│       │   │       │   ├── model/
+│       │   │       │   └── usecase/
+│       │   │       └── presentation/
+│       │   │           ├── MainActivity.kt
+│       │   │           ├── onboarding/
+│       │   │           ├── home/
+│       │   │           ├── plans/
+│       │   │           ├── exercise/
+│       │   │           ├── history/
+│       │   │           ├── custom/
+│       │   │           ├── calculator/
+│       │   │           └── settings/
+│       │   └── res/
+│       │       ├── drawable/
+│       │       ├── mipmap-*/ 
+│       │       └── values/
+│       │           ├── strings.xml
+│       │           └── themes.xml
+│       ├── androidTest/
+│       └── test/
+└── PROJECT_SUMMARY.md
+\`\`\`
+
+## 📦 Version Catalog (libs.versions.toml)
+
+\`\`\`toml
+[versions]
+agp                   = "$AGP_VERSION"
+kotlin                = "$KOTLIN_VERSION"
+composeBom            = "$COMPOSE_BOM_VERSION"
+coreKtx               = "1.15.0"
+lifecycleRuntimeKtx   = "2.8.7"
+activityCompose       = "1.9.3"
+navigationCompose     = "2.8.5"
+junit                 = "4.13.2"
+junitExt              = "1.2.1"
+espressoCore          = "3.6.1"
+hilt                  = "2.51.1"
+room                  = "2.6.1"
+datastore             = "1.1.1"
+coil                  = "2.6.0"
+vico                  = "1.15.0"
+lifecycleViewModel    = "2.8.7"
+coroutines            = "1.8.1"
+splashscreen          = "1.0.1"
+
+[libraries]
+# Core AndroidX
+androidx-core-ktx               = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx  = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-activity-compose       = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-navigation-compose     = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+splashscreen                    = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
+
+# Compose
+androidx-compose-bom            = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-ui             = { group = "androidx.compose.ui", name = "ui" }
+androidx-compose-ui-graphics    = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-compose-ui-tooling     = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-compose-material3      = { group = "androidx.compose.material3", name = "material3" }
+
+# Hilt (KAPT)
+hilt-android                    = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler                   = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+hilt-navigation-compose         = { group = "androidx.hilt", name = "hilt-navigation-compose", version = "1.2.0" }
+
+# Room (KAPT)
+room-runtime                    = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-ktx                        = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+room-compiler                   = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+# DataStore
+datastore-preferences           = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+
+# Coil
+coil-compose                    = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+coil-gif                        = { group = "io.coil-kt", name = "coil-gif", version.ref = "coil" }
+
+# Vico Charts
+vico-compose                    = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
+vico-compose-m3                 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
+vico-core                       = { group = "com.patrykandpatrick.vico", name = "core", version.ref = "vico" }
+
+# Lifecycle
+lifecycle-viewmodel-compose     = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleViewModel" }
+lifecycle-runtime-compose       = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleViewModel" }
+
+# Coroutines
+coroutines-android              = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+
+# Testing
+junit                           = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit-ext              = { group = "androidx.test.ext", name = "junit", version.ref = "junitExt" }
+androidx-espresso-core          = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+
+[plugins]
+android-application  = { id = "com.android.application", version.ref = "agp" }
+kotlin-android       = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose       = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+hilt                 = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+kotlin-kapt          = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+\`\`\`
+
+## 🏗️ Architecture Stack
+
+- **Pattern**: Clean Architecture (Presentation → Domain → Data)
+- **UI Toolkit**: Jetpack Compose + Material 3
+- **DI**: Hilt (with KAPT - KSP removed for mirror compatibility)
+- **Local DB**: Room (with KAPT)
+- **Persistence**: DataStore Preferences
+- **Image Loading**: Coil (supports GIF animations)
+- **Charts**: Vico (native Compose charts)
+- **Navigation**: Compose Navigation
+- **Async**: Kotlin Coroutines
+- **Min SDK**: ${MIN_SDK}
+- **Target/Compile SDK**: ${COMPILE_SDK}
+- **JDK**: 17+ (required for AGP 8.x)
+
+## 🌐 Repository Configuration
+
+**Extra Maven repos added:** $(if [ ${#EXTRA_MAVEN_URLS[@]} -gt 0 ]; then echo "${#EXTRA_MAVEN_URLS[@]}"; else echo "None"; fi)
+$(for i in "${!EXTRA_MAVEN_URLS[@]}"; do echo "- ${EXTRA_MAVEN_NAMES[$i]}: ${EXTRA_MAVEN_URLS[$i]}"; done)
+
+**Default repositories:**
+- google()
+- mavenCentral()
+- gradlePluginPortal()
+
+## 🔧 Build Configuration
+
+\`\`\`properties
+# gradle.properties
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+org.gradle.parallel=true
+org.gradle.caching=true
+org.gradle.configuration-cache=false  # KAPT incompatible
+kapt.use.worker.api=false
+android.useAndroidX=true
+android.enableJetifier=false
+kotlin.code.style=official
+\`\`\`
+
+## 🚀 Quick Commands
+
+\`\`\`bash
+# Build debug APK
+./gradlew assembleDebug
+
+# Install to connected device
+./gradlew installDebug
+
+# Build release APK
+./gradlew assembleRelease
+
+# Run unit tests
+./gradlew test
+
+# Run instrumented tests  
+./gradlew connectedAndroidTest
+
+# Run lint checks
+./gradlew lint
+
+# Clean build
+./gradlew clean build
+
+# Dependency insight
+./gradlew dependencies
+\`\`\`
+
+## 📝 Important Notes
+
+1. **KAPT instead of KSP**: Project uses KAPT for annotation processing (Hilt, Room) due to gradlePluginPortal access restrictions in some regions (e.g., Iran). KSP may still require additional mirror configuration.
+
+2. **No gradle-wrapper.jar**: The script delegates to your local Gradle installation at:
+   \`${GRADLE_BIN}\`
+
+3. **JDK Requirement**: JDK 17+ is required. Current JAVA_HOME:
+   \`${JAVA_HOME}\`
+
+4. **Clean Architecture Structure**: 
+   - **data**: DAOs, entities, repositories, seed data
+   - **domain**: Business models, use cases
+   - **presentation**: UI components (Activities, Composables, ViewModels)
+
+5. **Theme**: Orange-based color scheme (60% primary orange, 40% neutral). Follows 60-30-10 design principle.
+
+## 🔄 Next Steps (Recommended)
+
+1. Open in Android Studio (or IntelliJ IDEA)
+2. Run initial build: \`./gradlew build\`
+3. Add ViewModels in \`presentation/*\` folders
+4. Implement Room entities in \`data/local/entity/\`
+5. Create DAOs in \`data/local/dao/\`
+6. Build repositories in \`data/repository/\`
+7. Wire navigation in \`core/navigation/NavGraph.kt\`
+8. Replace stub screens with actual UI implementations
+
+---
+
+**Generated by:** create_android_project.sh  
+**Date:** $(date '+%Y-%m-%d %H:%M:%S')  
+**OS:** ${OS_NAME}  
+**Kotlin:** ${KOTLIN_VERSION} | **AGP:** ${AGP_VERSION} | **Gradle Wrapper:** ${GRADLE_WRAPPER_VERSION}
+MD
+
+success "Project summary written to: ${SUMMARY_FILE}"
+
+# Display the summary structure to terminal (compact version)
+echo ""
+echo -e "  ${BOLD}📊 Project Structure Summary:${RESET}"
+echo -e "  ┌─────────────────────────────────────────────────────────────┐"
+echo -e "  │ • $(printf "%-59s" "${#EXTRA_MAVEN_URLS[@]} extra Maven repo(s) configured")│"
+echo -e "  │ • $(printf "%-59s" "KAPT-based (Hilt + Room) - KSP disabled")│"
+echo -e "  │ • $(printf "%-59s" "Clean Architecture (data/domain/presentation)")│"
+echo -e "  │ • $(printf "%-59s" "Jetpack Compose + Material 3")│"
+echo -e "  │ • $(printf "%-59s" "${KOTLIN_VERSION} (Kotlin) / AGP ${AGP_VERSION}")│"
+echo -e "  │ • $(printf "%-59s" "Min SDK: ${MIN_SDK} | Target: ${COMPILE_SDK}")│"
+echo -e "  └─────────────────────────────────────────────────────────────┘"
+echo ""
+info "Full summary with file tree and TOML structure saved to:"
+echo -e "  ${CYAN}${SUMMARY_FILE}${RESET}"
+echo ""
+
+# =============================================================================
 # DONE
 # =============================================================================
 header "Project Ready! 🎉"
@@ -1300,3 +1643,4 @@ echo -e "  ./gradlew connectedAndroidTest   # instrumented tests"
 echo -e "  ./gradlew lint                   # lint check"
 echo ""
 success "Happy coding! 🚀"
+
